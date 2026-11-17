@@ -1,7 +1,7 @@
 [package]
 name = "notecanvas"
 version = "0.1.0"
-description = "便签画布 · 轻量 Windows 便签应用"
+description = "便签板 · 轻量 Windows 便签应用"
 authors = ["NoteCanvas"]
 edition = "2021"
 
