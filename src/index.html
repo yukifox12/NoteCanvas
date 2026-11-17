@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>便签板 · NoteCanvas</title>
+  <link rel="icon" href="data:," />
+  <script>
+    // 首帧前应用缓存主题，避免闪烁
+    try { document.documentElement.dataset.theme = localStorage.getItem('nc-theme') || 'light'; } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- 图标库（零尺寸定位容器，保证渐变等 paint server 引用可用） -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+      <linearGradient id="lg-note" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#f9cd4b"/><stop offset="1" stop-color="#e08e0e"/>
+      </linearGradient>
+      <linearGradient id="lg-empty" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#f9cd4b"/><stop offset="1" stop-color="#e08e0e"/>
+      </linearGradient>
+    </defs>
+    <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 2.5v11M2.5 8h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></symbol>
+    <symbol id="i-canvas" viewBox="0 0 16 16"><rect x="1.8" y="2.5" width="12.4" height="11" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M4.6 6h4M4.6 8.6h6.8M4.6 11h2.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 16 16"><path d="M8.8 1.5 3.6 9h3.2l-.8 5.5L11.6 7H8.2l.6-5.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3.2" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M8 1.2v1.6M8 13.2v1.6M1.2 8h1.6M13.2 8h1.6M3.2 3.2l1.1 1.1M11.7 11.7l1.1 1.1M12.8 3.2l-1.1 1.1M4.3 11.7l-1.1 1.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 16 16"><path d="M13.5 9.6A5.8 5.8 0 0 1 6.4 2.5a5.8 5.8 0 1 0 7.1 7.1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 16 16"><path d="M2.8 4.2h10.4M6.2 4.2V2.9c0-.5.4-.9.9-.9h1.8c.5 0 .9.4.9.9v1.3M4.2 4.2l.6 8.6c0 .7.6 1.2 1.3 1.2h3.8c.7 0 1.3-.5 1.3-1.2l.6-8.6M6.6 7v4M9.4 7v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 16 16"><path d="m11.3 2.4 2.3 2.3L5.4 12.9 2.5 13.5l.6-2.9 8.2-8.2Zm0 0 1.2-1.2a.9.9 0 0 1 1.3 0l1 1a.9.9 0 0 1 0 1.3l-1.2 1.2" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/></symbol>
+    <symbol id="i-close" viewBox="0 0 16 16"><path d="m3.5 3.5 9 9m0-9-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 16 16"><path d="M2.5 8h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-target" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.6" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><path d="M8 .8v2.4M8 12.8v2.4M.8 8h2.4M12.8 8h2.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-grip" viewBox="0 0 11 15"><g fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="8" cy="3" r="1.2"/><circle cx="3" cy="7.5" r="1.2"/><circle cx="8" cy="7.5" r="1.2"/><circle cx="3" cy="12" r="1.2"/><circle cx="8" cy="12" r="1.2"/></g></symbol>
+    <symbol id="i-resize" viewBox="0 0 10 10"><path d="M9 1 1 9M9 5 5 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 16 16"><path d="m2.8 8.4 3.4 3.4 7-7.6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+    <symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.4" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M8 7.2v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="4.8" r=".9" fill="currentColor"/></symbol>
+    <symbol id="i-inbox" viewBox="0 0 16 16"><path d="M2 9.5 3.6 3.4c.1-.5.6-.9 1.1-.9h6.6c.5 0 1 .4 1.1.9L14 9.5v3c0 .6-.4 1-1 1H3c-.6 0-1-.4-1-1v-3Zm0 0h3.6l.8 1.6h3.2l.8-1.6H14" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 16 16"><path d="M1.8 4.2c0-.6.4-1 1-1h3.4l1.4 1.8h5.6c.6 0 1 .4 1 1v6.8c0 .6-.4 1-1 1H2.8c-.6 0-1-.4-1-1V4.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" fill="none"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 16 16"><path d="m6 4 4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+    <symbol id="i-note-logo" viewBox="0 0 40 40">
+      <path d="M5 8a4 4 0 0 1 4-4h22a4 4 0 0 1 4 4v17l-9 9H9a4 4 0 0 1-4-4V8Z" fill="url(#lg-note)"/>
+      <path d="M26 34v-6a3 3 0 0 1 3-3h6l-9 9Z" fill="#a86208"/>
+      <path d="M11 13h18M11 19h14M11 25h9" stroke="#6b4508" stroke-width="2.6" stroke-linecap="round" opacity=".62"/>
+    </symbol>
+    <symbol id="i-empty-note" viewBox="0 0 96 96">
+      <path d="M14 20a8 8 0 0 1 8-8h52a8 8 0 0 1 8 8v40l-22 22H22a8 8 0 0 1-8-8V20Z" fill="url(#lg-empty)" opacity=".9"/>
+      <path d="M60 82V66a6 6 0 0 1 6-6h16L60 82Z" fill="#a86208"/>
+      <path d="M28 32h40M28 44h30M28 56h18" stroke="#6b4508" stroke-width="5" stroke-linecap="round" opacity=".55"/>
+    </symbol>
+  </svg>
+
+  <div class="app">
+    <!-- ======= 侧栏 ======= -->
+    <aside class="sidebar">
+      <div class="brand">
+        <svg class="brand-logo"><use href="#i-note-logo"/></svg>
+        <div class="brand-text">
+          <div class="brand-name">便签板</div>
+          <div class="brand-sub">NoteCanvas</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-block" id="btn-new-ws">
+        <svg><use href="#i-plus"/></svg><span>新建工作区</span>
+      </button>
+
+      <div class="side-section grow">
+        <div class="side-label"><span>工作区</span><span id="ws-total"></span></div>
+        <div class="side-list" id="ws-list"></div>
+      </div>
+
+      <div class="side-section quick-sec">
+        <div class="side-label">
+          <span>快速便签</span>
+          <button class="mini-btn" id="btn-new-quick" title="新建快速便签（无需板）">
+            <svg><use href="#i-plus"/></svg>
+          </button>
+        </div>
+        <div class="side-list" id="quick-list"></div>
+      </div>
+
+      <div class="side-foot">
+        <button class="btn btn-ghost btn-block" id="btn-quick-open">
+          <svg><use href="#i-bolt"/></svg>快速便签
+        </button>
+        <button class="btn btn-ghost btn-block" id="btn-settings">
+          <svg><use href="#i-folder"/></svg>保存位置
+        </button>
+        <div class="theme-switch" role="group" aria-label="主题切换">
+          <button class="theme-opt" data-theme-opt="light"><svg><use href="#i-sun"/></svg>浅色</button>
+          <button class="theme-opt" data-theme-opt="dark"><svg><use href="#i-moon"/></svg>深色</button>
+        </div>
+        <div class="kbd-hint"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>N</kbd><span>随时速记</span></div>
+      </div>
+    </aside>
+
+    <!-- ======= 主区 ======= -->
+    <main class="main" id="main-area">
+      <div class="toolbar" id="toolbar">
+        <div class="ws-title-wrap">
+          <button class="ws-title" id="ws-title" title="点击重命名"></button>
+          <span class="ws-meta" id="ws-meta"></span>
+        </div>
+        <div class="toolbar-hint">空白处单击新建便签 · 拖动标题栏移动 · Ctrl + 滚轮缩放 · 拖拽空白平移板</div>
+        <div class="zoom-group">
+          <button class="icon-btn" id="zoom-out" title="缩小"><svg><use href="#i-minus"/></svg></button>
+          <span class="zoom-label" id="zoom-label" title="点击重置视图">100%</span>
+          <button class="icon-btn" id="zoom-in" title="放大"><svg><use href="#i-plus"/></svg></button>
+          <button class="icon-btn" id="zoom-reset" title="重置视图"><svg><use href="#i-target"/></svg></button>
+        </div>
+        <button class="btn btn-primary" id="btn-new-note"><svg><use href="#i-plus"/></svg><span>新建便签</span></button>
+      </div>
+      <div class="canvas-viewport" id="viewport">
+        <div class="world" id="world"></div>
+        <div class="canvas-empty" id="canvas-empty" hidden>
+          <svg><use href="#i-empty-note"/></svg>
+          <div class="canvas-empty-title">点击任意位置，落下第一张便签</div>
+          <div class="canvas-empty-sub"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>N</kbd> 也可以随时唤起快速便签</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast-zone" id="toast-zone"></div>
+
+  <script src="bridge.js"></script>
+  <script src="quick.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

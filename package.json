@@ -1,0 +1,15 @@
+{
+  "name": "notecanvas",
+  "private": true,
+  "version": "0.1.0",
+  "description": "便签画布 · 小型低占用 Windows 便签应用（Tauri 2 + Rust + WebView2）",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "icons": "node scripts/gen-icons.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

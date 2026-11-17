@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>快速便签</title>
+  <link rel="icon" href="data:," />
+  <script>
+    try { document.documentElement.dataset.theme = localStorage.getItem('nc-theme') || 'light'; } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="quick-body" data-quick-standalone>
+  <div class="quick-shell standalone" id="quick-root"></div>
+  <script src="bridge.js"></script>
+  <script src="quick.js"></script>
+</body>
+</html>
